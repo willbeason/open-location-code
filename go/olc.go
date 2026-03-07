@@ -75,6 +75,14 @@ func (area CodeArea) Center() (lat, lng float64) {
 		math.Min(area.LngLo+(area.LngHi-area.LngLo)/2, lngMax)
 }
 
+var inAlphabet = [128]bool{
+	'2': true, '3': true, '4': true, '5': true, '6': true, '7': true, '8': true, '9': true,
+	'C': true, 'F': true, 'G': true, 'H': true, 'J': true, 'M': true, 'P': true, 'Q': true,
+	'R': true, 'V': true, 'W': true, 'X': true,
+	'c': true, 'f': true, 'g': true, 'h': true, 'j': true, 'm': true, 'p': true, 'q': true,
+	'r': true, 'v': true, 'w': true, 'x': true,
+}
+
 // Check checks whether the passed string is a valid OLC code.
 // It could be a full code (8FVC9G8F+6W), a padded code (8FVC0000+) or a code fragment (9G8F+6W).
 func Check(code string) error {
@@ -101,14 +109,13 @@ func Check(code string) error {
 			return fmt.Errorf("%c after zero @%d", r, i)
 		}
 
-		if '2' <= r && r <= '9' {
+		if r > 128 {
+			return fmt.Errorf("invalid char %c @%d", r, i)
+		}
+		if inAlphabet[r] {
 			continue
 		}
 		switch r {
-		case 'C', 'F', 'G', 'H', 'J', 'M', 'P', 'Q', 'R', 'V', 'W', 'X',
-			// Processing of Plus Codes must be case insensitive.
-			'c', 'f', 'g', 'h', 'j', 'm', 'p', 'q', 'r', 'v', 'w', 'x':
-			continue
 		case Separator:
 			// In addition to the above characters, a full Open Location Code can include a single "+" as a separator after the eighth digit.
 			if firstSep != -1 {
