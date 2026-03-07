@@ -31,8 +31,8 @@ func Decode(code string) (CodeArea, error) {
 	}
 	// Strip out separator character, padding characters and convert to upper
 	// case.
-	code = StripCode(code)
-	codeLen := len(code)
+	codeBytes := StripCode(code)
+	codeLen := len(codeBytes)
 	if codeLen < 2 {
 		return area, errors.New("code too short")
 	}
@@ -50,8 +50,8 @@ func Decode(code string) (CodeArea, error) {
 		lng *= encBase
 		height *= encBase
 		if i < codeLen {
-			lat += int64(strings.IndexByte(Alphabet, code[i]))
-			lng += int64(strings.IndexByte(Alphabet, code[i+1]))
+			lat += int64(strings.IndexByte(Alphabet, codeBytes[i]))
+			lng += int64(strings.IndexByte(Alphabet, codeBytes[i+1]))
 			height = 1
 		}
 	}
@@ -64,7 +64,7 @@ func Decode(code string) (CodeArea, error) {
 		lng *= gridCols
 		width *= gridCols
 		if i < codeLen {
-			dval := int64(strings.IndexByte(Alphabet, code[i]))
+			dval := int64(strings.IndexByte(Alphabet, codeBytes[i]))
 			lat += dval / gridCols
 			lng += dval % gridCols
 			height = 1
