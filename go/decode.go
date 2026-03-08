@@ -26,8 +26,8 @@ func Decode(code string) (CodeArea, error) {
 	}
 	// Strip out separator character, padding characters and convert to upper
 	// case.
-	codeBytes := StripCode(code)
-	codeLen := len(codeBytes)
+	code = StripCode(code)
+	codeLen := len(code)
 	// lat and lng build up the integer values.
 	var lat int64
 	var lng int64
@@ -42,8 +42,8 @@ func Decode(code string) (CodeArea, error) {
 		lng *= encBase
 		height *= encBase
 		if i < codeLen {
-			lat += alphabetPosition[codeBytes[i]]
-			lng += alphabetPosition[codeBytes[i+1]]
+			lat += alphabetPosition[code[i]]
+			lng += alphabetPosition[code[i+1]]
 			height = 1
 		}
 	}
@@ -56,7 +56,7 @@ func Decode(code string) (CodeArea, error) {
 		lng *= gridCols
 		width *= gridCols
 		if i < codeLen {
-			dval := alphabetPosition[codeBytes[i]]
+			dval := alphabetPosition[code[i]]
 			lat += dval / gridCols
 			lng += dval % gridCols
 			height = 1

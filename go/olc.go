@@ -189,6 +189,13 @@ func CheckFull(code string) error {
 	return nil
 }
 
+func upper(b byte) byte {
+	if 'c' <= b && b <= 'x' {
+		return b + 'C' - 'c'
+	}
+	return b
+}
+
 // StripCode strips the padding and separator characters from the code.
 //
 // The code is truncated to the first 15 digits, as Decode won't use more,
@@ -200,7 +207,7 @@ func StripCode(code string) string {
 		if r == Separator || r == Padding {
 			continue
 		}
-		result[pos] = byte(r)
+		result[pos] = upper(byte(r))
 		pos++
 		if pos >= maxCodeLen {
 			break
