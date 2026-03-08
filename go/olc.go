@@ -28,7 +28,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strings"
 )
 
 const (
@@ -81,6 +80,14 @@ var inAlphabet = [128]bool{
 	'R': true, 'V': true, 'W': true, 'X': true,
 	'c': true, 'f': true, 'g': true, 'h': true, 'j': true, 'm': true, 'p': true, 'q': true,
 	'r': true, 'v': true, 'w': true, 'x': true,
+}
+
+var alphabetPosition = [256]int64{
+	'2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7,
+	'C': 8, 'F': 9, 'G': 10, 'H': 11, 'J': 12, 'M': 13, 'P': 14, 'Q': 15,
+	'R': 16, 'V': 17, 'W': 18, 'X': 19,
+	'c': 8, 'f': 9, 'g': 10, 'h': 11, 'j': 12, 'm': 13, 'p': 14, 'q': 15,
+	'r': 16, 'v': 17, 'w': 18, 'x': 19,
 }
 
 // Check checks whether the passed string is a valid OLC code.
@@ -157,8 +164,10 @@ func CheckShort(code string) error {
 	if err := Check(code); err != nil {
 		return err
 	}
-	if i := strings.IndexByte(code, Separator); i >= 0 && i < sepPos {
-		return nil
+	for i := 0; i < len(code) && i < sepPos; i += 2 {
+		if code[i] == Separator {
+			return nil
+		}
 	}
 	return ErrNotShort
 }
@@ -171,40 +180,33 @@ func CheckFull(code string) error {
 	} else if err != ErrNotShort {
 		return err
 	}
-	if firstLat := strings.IndexByte(Alphabet, upper(code[0])) * int(encBase); firstLat >= latMax*2 {
+	if firstLat := alphabetPosition[code[0]] * encBase; firstLat >= latMax*2 {
 		return errors.New("latitude outside range")
 	}
-	if firstLong := strings.IndexByte(Alphabet, upper(code[1])) * int(encBase); firstLong >= lngMax*2 {
+	if firstLong := alphabetPosition[code[1]] * encBase; firstLong >= lngMax*2 {
 		return errors.New("longitude outside range")
 	}
 	return nil
-}
-
-func upper(b byte) byte {
-	if 'c' <= b && b <= 'x' {
-		return b + 'C' - 'c'
-	}
-	return b
 }
 
 // StripCode strips the padding and separator characters from the code.
 //
 // The code is truncated to the first 15 digits, as Decode won't use more,
 // to avoid underflow errors.
-func StripCode(code string) []byte {
+func StripCode(code string) string {
 	result := make([]byte, maxCodeLen)
 	pos := 0
 	for _, r := range code {
 		if r == Separator || r == Padding {
 			continue
 		}
-		result[pos] = upper(byte(r))
+		result[pos] = byte(r)
 		pos++
 		if pos >= maxCodeLen {
 			break
 		}
 	}
-	return result[:pos]
+	return string(result[:pos])
 }
 
 // Because the OLC codes are an area, they can't start at 180 degrees, because they would then have something > 180 as their upper bound.

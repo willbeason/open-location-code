@@ -14,11 +14,6 @@
 
 package olc
 
-import (
-	"errors"
-	"strings"
-)
-
 // Decode decodes an Open Location Code into the location coordinates.
 // Returns a CodeArea object that includes the coordinates of the bounding
 // box - the lower left, center and upper right.
@@ -33,9 +28,6 @@ func Decode(code string) (CodeArea, error) {
 	// case.
 	codeBytes := StripCode(code)
 	codeLen := len(codeBytes)
-	if codeLen < 2 {
-		return area, errors.New("code too short")
-	}
 	// lat and lng build up the integer values.
 	var lat int64
 	var lng int64
@@ -50,8 +42,8 @@ func Decode(code string) (CodeArea, error) {
 		lng *= encBase
 		height *= encBase
 		if i < codeLen {
-			lat += int64(strings.IndexByte(Alphabet, codeBytes[i]))
-			lng += int64(strings.IndexByte(Alphabet, codeBytes[i+1]))
+			lat += alphabetPosition[codeBytes[i]]
+			lng += alphabetPosition[codeBytes[i+1]]
 			height = 1
 		}
 	}
@@ -64,7 +56,7 @@ func Decode(code string) (CodeArea, error) {
 		lng *= gridCols
 		width *= gridCols
 		if i < codeLen {
-			dval := int64(strings.IndexByte(Alphabet, codeBytes[i]))
+			dval := alphabetPosition[codeBytes[i]]
 			lat += dval / gridCols
 			lng += dval % gridCols
 			height = 1
