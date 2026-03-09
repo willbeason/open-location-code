@@ -3,12 +3,12 @@
 #include <algorithm>
 
 namespace openlocationcode {
+constexpr double kLatitudeMaxDegrees = 90;
+constexpr double kLongitudeMaxDegrees = 180;
 
-const double kLatitudeMaxDegrees = 90;
-const double kLongitudeMaxDegrees = 180;
-
-CodeArea::CodeArea(double latitude_lo, double longitude_lo, double latitude_hi,
-                   double longitude_hi, size_t code_length) {
+CodeArea::CodeArea(const double latitude_lo, const double longitude_lo,
+                   const double latitude_hi, const double longitude_hi,
+                   const size_t code_length) {
   latitude_lo_ = latitude_lo;
   longitude_lo_ = longitude_lo;
   latitude_hi_ = latitude_hi;

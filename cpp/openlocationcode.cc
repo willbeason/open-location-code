@@ -26,15 +26,18 @@ constexpr size_t kSeparatorPosition = 8;
 const size_t kInitialExponent = floor(log(360) / log(kEncodingBase));
 // Work out the enclosing resolution (in degrees) for the grid algorithm.
 const double kGridSizeDegrees =
-    1 / pow(kEncodingBase, static_cast<double>(static_cast<size_t>(kPairCodeLength / 2) - (kInitialExponent + 1)));
+    1 / pow(kEncodingBase,
+            static_cast<double>(static_cast<size_t>(kPairCodeLength / 2) -
+                                (kInitialExponent + 1)));
 // Inverse (1/) of the precision of the final pair digits in degrees. (20^3)
 constexpr int64_t kPairPrecisionInverse = 8000;
 // Inverse (1/) of the precision of the final grid digits in degrees.
 // (Latitude and longitude are different.)
 const int64_t kGridLatPrecisionInverse =
-    kPairPrecisionInverse * static_cast<int64_t>(pow(kGridRows, kGridCodeLength));
-const int64_t kGridLngPrecisionInverse =
-    static_cast<int64_t>(kPairPrecisionInverse * pow(kGridColumns, kGridCodeLength));
+    kPairPrecisionInverse *
+    static_cast<int64_t>(pow(kGridRows, kGridCodeLength));
+const int64_t kGridLngPrecisionInverse = static_cast<int64_t>(
+    kPairPrecisionInverse * pow(kGridColumns, kGridCodeLength));
 // Latitude bounds are -kLatitudeMaxDegrees degrees and +kLatitudeMaxDegrees
 // degrees which we transpose to 0 and 180 degrees.
 constexpr int64_t kLatitudeMaxDegrees = 90;
@@ -44,8 +47,8 @@ constexpr int64_t kLongitudeMaxDegrees = 180;
 // Lookup table of the alphabet positions of characters 'C' through 'X',
 // inclusive. A value of -1 means the character isn't part of the alphabet.
 constexpr int kPositionLUT['X' - 'C' + 1] = {8,  -1, -1, 9,  10, 11, -1, 12,
-                                         -1, -1, 13, -1, -1, 14, 15, 16,
-                                         -1, -1, -1, 17, 18, 19};
+                                             -1, -1, 13, -1, -1, 14, 15, 16,
+                                             -1, -1, -1, 17, 18, 19};
 
 int64_t latitudeToInteger(const double latitude) {
   int64_t lat = floor(latitude * static_cast<double>(kGridLatPrecisionInverse));
@@ -59,7 +62,8 @@ int64_t latitudeToInteger(const double latitude) {
 }
 
 int64_t longitudeToInteger(const double longitude) {
-  int64_t lng = floor(longitude * static_cast<double>(kGridLngPrecisionInverse));
+  int64_t lng =
+      floor(longitude * static_cast<double>(kGridLngPrecisionInverse));
   lng += kLongitudeMaxDegrees * kGridLngPrecisionInverse;
   if (lng <= 0) {
     lng = lng % (2 * kLongitudeMaxDegrees * kGridLngPrecisionInverse) +
@@ -93,10 +97,8 @@ std::string encodeIntegers(int64_t lat_val, int64_t lng_val,
   }
 
   // Add the pair after the separator.
-  code[kSeparatorPosition + 1] =
-      kAlphabet[lat_val % kEncodingBase];
-  code[kSeparatorPosition + 2] =
-      kAlphabet[lng_val % kEncodingBase];
+  code[kSeparatorPosition + 1] = kAlphabet[lat_val % kEncodingBase];
+  code[kSeparatorPosition + 2] = kAlphabet[lng_val % kEncodingBase];
   lat_val /= kEncodingBase;
   lng_val /= kEncodingBase;
 
@@ -138,9 +140,11 @@ double pow_neg(const double base, const double exponent) {
 // different precisions due to the grid method having fewer columns than rows.
 double compute_precision_for_length(const int code_length) {
   if (code_length <= 10) {
-    return pow_neg(internal::kEncodingBase, floor(static_cast<int>(code_length / -2) + 2));
+    return pow_neg(internal::kEncodingBase,
+                   floor(static_cast<int>(code_length / -2) + 2));
   }
-  return pow_neg(internal::kEncodingBase, -3) / pow(5, static_cast<double>(code_length - 10));
+  return pow_neg(internal::kEncodingBase, -3) /
+         pow(5, static_cast<double>(code_length - 10));
 }
 
 // Returns the position of a char in the encoding alphabet, or -1 if invalid.
@@ -173,7 +177,8 @@ double adjust_latitude(double latitude_degrees, const size_t code_length) {
   }
   // Subtract half the code precision to get the latitude into the code
   // area.
-  const double precision = compute_precision_for_length(static_cast<int>(code_length));
+  const double precision =
+      compute_precision_for_length(static_cast<int>(code_length));
   return latitude_degrees - precision / 2;
 }
 
@@ -227,7 +232,9 @@ CodeArea Decode(const std::string &code) {
   // How many digits do we have to process?
   size_t digits = std::min(internal::kPairCodeLength, clean_code.size());
   // Define the place value for the most significant pair.
-  int pv = static_cast<int>(pow(internal::kEncodingBase, static_cast<size_t>(internal::kPairCodeLength / 2) - 1));
+  int pv = static_cast<int>(
+      pow(internal::kEncodingBase,
+          static_cast<size_t>(internal::kPairCodeLength / 2) - 1));
   for (size_t i = 0; i < digits - 1; i += 2) {
     normal_lat += get_alphabet_position(clean_code[i]) * pv;
     normal_lng += get_alphabet_position(clean_code[i + 1]) * pv;
@@ -236,13 +243,17 @@ CodeArea Decode(const std::string &code) {
     }
   }
   // Convert the place value to a float in degrees.
-  double lat_precision = static_cast<double>(pv) / internal::kPairPrecisionInverse;
-  double lng_precision = static_cast<double>(pv) / internal::kPairPrecisionInverse;
+  double lat_precision =
+      static_cast<double>(pv) / internal::kPairPrecisionInverse;
+  double lng_precision =
+      static_cast<double>(pv) / internal::kPairPrecisionInverse;
   // Process any extra precision digits.
   if (clean_code.size() > internal::kPairCodeLength) {
     // Initialise the place values for the grid.
-    int row_pv = static_cast<int>(pow(internal::kGridRows, internal::kGridCodeLength - 1));
-    int col_pv = static_cast<int>(pow(internal::kGridColumns, internal::kGridCodeLength - 1));
+    int row_pv = static_cast<int>(
+        pow(internal::kGridRows, internal::kGridCodeLength - 1));
+    int col_pv = static_cast<int>(
+        pow(internal::kGridColumns, internal::kGridCodeLength - 1));
     // How many digits do we have to process?
     digits = std::min(internal::kMaximumDigitCount, clean_code.size());
     for (size_t i = internal::kPairCodeLength; i < digits; i++) {
@@ -257,20 +268,25 @@ CodeArea Decode(const std::string &code) {
       }
     }
     // Adjust the precisions from the integer values to degrees.
-    lat_precision = static_cast<double>(row_pv) / static_cast<double>(internal::kGridLatPrecisionInverse);
-    lng_precision = static_cast<double>(col_pv) / static_cast<double>(internal::kGridLngPrecisionInverse);
+    lat_precision = static_cast<double>(row_pv) /
+                    static_cast<double>(internal::kGridLatPrecisionInverse);
+    lng_precision = static_cast<double>(col_pv) /
+                    static_cast<double>(internal::kGridLngPrecisionInverse);
   }
   // Merge the values from the normal and extra precision parts of the code.
   // Everything is ints so they all need to be cast to floats.
-  const double lat = static_cast<double>(normal_lat) / internal::kPairPrecisionInverse +
-               static_cast<double>(extra_lat) / static_cast<double>(internal::kGridLatPrecisionInverse);
-  const double lng = static_cast<double>(normal_lng) / internal::kPairPrecisionInverse +
-               static_cast<double>(extra_lng) / static_cast<double>(internal::kGridLngPrecisionInverse);
+  const double lat =
+      static_cast<double>(normal_lat) / internal::kPairPrecisionInverse +
+      static_cast<double>(extra_lat) /
+          static_cast<double>(internal::kGridLatPrecisionInverse);
+  const double lng =
+      static_cast<double>(normal_lng) / internal::kPairPrecisionInverse +
+      static_cast<double>(extra_lng) /
+          static_cast<double>(internal::kGridLngPrecisionInverse);
   // Round everything off to 14 places.
   return {round(lat * 1e14) / 1e14, round(lng * 1e14) / 1e14,
-                  round((lat + lat_precision) * 1e14) / 1e14,
-                  round((lng + lng_precision) * 1e14) / 1e14,
-                  clean_code.size()};
+          round((lat + lat_precision) * 1e14) / 1e14,
+          round((lng + lng_precision) * 1e14) / 1e14, clean_code.size()};
 }
 
 std::string Shorten(const std::string &code, const LatLng &reference_location) {
@@ -288,7 +304,7 @@ std::string Shorten(const std::string &code, const LatLng &reference_location) {
   const double longitude = normalize_longitude(reference_location.longitude);
   // How close are the latitude and longitude to the code center.
   const double range = std::max(fabs(center.latitude - latitude),
-                          fabs(center.longitude - longitude));
+                                fabs(center.longitude - longitude));
   std::string code_copy(code);
   constexpr int removal_lengths[3] = {8, 6, 4};
   for (const int removal_length : removal_lengths) {
@@ -321,8 +337,8 @@ std::string RecoverNearest(const std::string &short_code,
   const size_t padding_length =
       internal::kSeparatorPosition - short_code.find(internal::kSeparator);
   // The resolution (height and width) of the padded area in degrees.
-  const double resolution =
-      pow_neg(internal::kEncodingBase, 2.0 - static_cast<double>(padding_length) / 2.0);
+  const double resolution = pow_neg(
+      internal::kEncodingBase, 2.0 - static_cast<double>(padding_length) / 2.0);
   // Distance from the center to an edge (in degrees).
   const double half_res = resolution / 2.0;
   // Use the reference location to pad the supplied short code and decode it.
@@ -414,8 +430,7 @@ bool IsValid(const std::string &code) {
   }
   // Are there any invalid characters?
   return std::all_of(code.begin(), code.end(), [](const char c) {
-    return c == internal::kSeparator ||
-           c == internal::kPaddingCharacter ||
+    return c == internal::kSeparator || c == internal::kPaddingCharacter ||
            get_alphabet_position(c) >= 0;
   });
 }
