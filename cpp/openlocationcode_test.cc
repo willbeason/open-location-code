@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <random>
 #include <string>
 
 #include "codearea.h"
@@ -327,18 +328,24 @@ struct BenchmarkTestData {
 };
 
 TEST(BenchmarkChecks, BenchmarkEncodeDecode) {
-  std::srand(std::time(0));
+  // NOLINTNEXTLINE(cert-msc51-cpp): fixed seed is for deterministic tests.
+  std::mt19937 rng(0);
+  std::uniform_real_distribution<> lat_dist(-90.0, 90.0);
+  std::uniform_real_distribution<> lng_dist(-180.0, 180.0);
+  std::uniform_real_distribution<> rounding_dist(0.0, 10.0);
+  std::uniform_int_distribution<size_t> len_dist(0, 15);
+
   std::vector<BenchmarkTestData> tests;
-  const size_t loops = 1000000;
+  constexpr  size_t loops = 1000000;
   for (size_t i = 0; i < loops; i++) {
     BenchmarkTestData test_data = {};
-    double lat = static_cast<double>(rand()) / RAND_MAX * 180 - 90;
-    double lng = static_cast<double>(rand()) / RAND_MAX * 360 - 180;
-    size_t rounding =
-        pow(10, round(static_cast<double>(rand()) / RAND_MAX * 10));
+    double lat = lat_dist(rng);
+    double lng = lng_dist(rng);
+    const double rounding =
+        pow(10, round(rounding_dist(rng)));
     lat = round(lat * rounding) / rounding;
     lng = round(lng * rounding) / rounding;
-    size_t len = round(static_cast<double>(rand()) / RAND_MAX * 15);
+    auto len = len_dist(rng);
     if (len < 10 && len % 2 == 1) {
       len += 1;
     }
