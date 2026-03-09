@@ -31,7 +31,7 @@ TEST(ParameterChecks, PositionLUTMatchesAlphabet) {
   // Loop over all elements of the lookup table.
   for (size_t i = 0; i < sizeof(kPositionLUT) / sizeof(kPositionLUT[0]); ++i) {
     const int pos = kPositionLUT[i];
-    const char c = 'C' + i;
+    const char c = static_cast<char>('C' + static_cast<int>(i));
     if (pos != -1) {
       // If the LUT entry indicates this character is in kAlphabet, verify it.
       EXPECT_LT(pos, static_cast<int>(internal::kEncodingBase));
@@ -95,7 +95,7 @@ std::vector<DecodingTestData> GetDecodingDataFromCsv() {
   for (auto& csv_record : csv_records) {
     DecodingTestData test_data = {};
     test_data.code = csv_record[0];
-    test_data.length = atoi(csv_record[1].c_str());
+    test_data.length = std::stoi(csv_record[1]);
     test_data.lo_lat_deg = strtod(csv_record[2].c_str(), nullptr);
     test_data.lo_lng_deg = strtod(csv_record[3].c_str(), nullptr);
     test_data.hi_lat_deg = strtod(csv_record[4].c_str(), nullptr);
@@ -151,7 +151,7 @@ std::vector<EncodingTestData> GetEncodingDataFromCsv() {
     test_data.lng_deg = strtod(csv_record[1].c_str(), nullptr);
     test_data.lat_int = strtoll(csv_record[2].c_str(), nullptr, 10);
     test_data.lng_int = strtoll(csv_record[3].c_str(), nullptr, 10);
-    test_data.length = atoi(csv_record[4].c_str());
+    test_data.length = std::stoi(csv_record[4]);
     test_data.code = csv_record[5];
     data_results.push_back(test_data);
   }
