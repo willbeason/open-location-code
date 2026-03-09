@@ -148,7 +148,7 @@ double compute_precision_for_length(const int code_length) {
 }
 
 // Returns the position of a char in the encoding alphabet, or -1 if invalid.
-int get_alphabet_position(char c) {
+int get_alphabet_position(const char c) {
   // We use a lookup table for performance reasons (e.g. over std::find).
   if (c >= 'C' && c <= 'X') return internal::kPositionLUT[c - 'C'];
   if (c >= 'c' && c <= 'x') return internal::kPositionLUT[c - 'c'];
@@ -206,8 +206,8 @@ std::string Encode(const LatLng &location, size_t code_length) {
     code_length = code_length + 1;
   }
   // Convert latitude and longitude into integer values.
-  int64_t lat_val = internal::latitudeToInteger(location.latitude);
-  int64_t lng_val = internal::longitudeToInteger(location.longitude);
+  const int64_t lat_val = internal::latitudeToInteger(location.latitude);
+  const int64_t lng_val = internal::longitudeToInteger(location.longitude);
   return internal::encodeIntegers(lat_val, lng_val, code_length);
 }
 
@@ -369,7 +369,7 @@ std::string RecoverNearest(const std::string &short_code,
   } else if (longitude - half_res > center_lng) {
     center_lng += resolution;
   }
-  LatLng center_latlng = {center_lat, center_lng};
+  const LatLng center_latlng = {center_lat, center_lng};
   return Encode(center_latlng, CodeLength(short_code) + padding_length);
 }
 
@@ -377,7 +377,7 @@ bool IsValid(const std::string &code) {
   if (code.empty()) {
     return false;
   }
-  size_t separatorPos = code.find(internal::kSeparator);
+  const size_t separatorPos = code.find(internal::kSeparator);
   // The separator is required.
   if (separatorPos == std::string::npos) {
     return false;
@@ -397,7 +397,7 @@ bool IsValid(const std::string &code) {
   }
   // We can have an even number of padding characters before the separator,
   // but then it must be the final character.
-  std::size_t paddingStart = code.find_first_of(internal::kPaddingCharacter);
+  const std::size_t paddingStart = code.find_first_of(internal::kPaddingCharacter);
   if (paddingStart != std::string::npos) {
     // Short codes cannot have padding
     if (separatorPos < internal::kSeparatorPosition) {
@@ -475,7 +475,7 @@ bool IsFull(const std::string &code) {
 }
 
 size_t CodeLength(const std::string &code) {
-  std::string clean_code = clean_code_chars(code);
+  const std::string clean_code = clean_code_chars(code);
   return clean_code.size();
 }
 

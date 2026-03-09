@@ -91,7 +91,7 @@ const std::string kDecodingTestsFile = "test_data/decoding.csv";
 
 std::vector<DecodingTestData> GetDecodingDataFromCsv() {
   std::vector<DecodingTestData> data_results;
-  std::vector<std::vector<std::string>> csv_records =
+  const std::vector<std::vector<std::string>> csv_records =
       ParseCsv(kDecodingTestsFile);
   for (auto& csv_record : csv_records) {
     DecodingTestData test_data = {};
@@ -108,9 +108,9 @@ std::vector<DecodingTestData> GetDecodingDataFromCsv() {
 
 TEST_P(DecodingChecks, Decode) {
   const DecodingTestData& test_data = GetParam();
-  const auto expected_rect =
-      CodeArea(test_data.lo_lat_deg, test_data.lo_lng_deg, test_data.hi_lat_deg,
-               test_data.hi_lng_deg, test_data.length);
+  const CodeArea expected_rect{test_data.lo_lat_deg, test_data.lo_lng_deg,
+                               test_data.hi_lat_deg, test_data.hi_lng_deg,
+                               test_data.length};
   // Decode the code and check we get the correct coordinates.
   const CodeArea actual_rect = Decode(test_data.code);
   EXPECT_EQ(expected_rect.GetCodeLength(), actual_rect.GetCodeLength());
@@ -173,7 +173,7 @@ TEST_P(TolerantEncodingChecks, EncodeDegrees) {
   int failure_count = 0;
 
   for (const EncodingTestData& tc : test_params.test_data) {
-    const auto lat_lng = LatLng{tc.lat_deg, tc.lng_deg};
+    const LatLng lat_lng{tc.lat_deg, tc.lng_deg};
     // Encode the test location and make sure we get the expected code.
     std::string got_code = Encode(lat_lng, tc.length);
     if (tc.code != got_code) {
@@ -234,7 +234,7 @@ const std::string kValidityTestsFile = "test_data/validityTests.csv";
 
 std::vector<ValidityTestData> GetValidityDataFromCsv() {
   std::vector<ValidityTestData> data_results;
-  std::vector<std::vector<std::string>> csv_records =
+  const std::vector<std::vector<std::string>> csv_records =
       ParseCsv(kValidityTestsFile);
   for (auto& csv_record : csv_records) {
     ValidityTestData test_data = {};
@@ -271,7 +271,7 @@ const std::string kShortCodeTestsFile = "test_data/shortCodeTests.csv";
 
 std::vector<ShortCodeTestData> GetShortCodeDataFromCsv() {
   std::vector<ShortCodeTestData> data_results;
-  std::vector<std::vector<std::string>> csv_records =
+  const std::vector<std::vector<std::string>> csv_records =
       ParseCsv(kShortCodeTestsFile);
   for (auto& csv_record : csv_records) {
     ShortCodeTestData test_data = {};
@@ -286,17 +286,17 @@ std::vector<ShortCodeTestData> GetShortCodeDataFromCsv() {
 }
 
 TEST_P(ShortCodeChecks, ShortCode) {
-  ShortCodeTestData test_data = GetParam();
-  LatLng reference_loc =
-      LatLng{test_data.reference_lat, test_data.reference_lng};
+  const ShortCodeTestData& test_data = GetParam();
+  const LatLng reference_loc{test_data.reference_lat, test_data.reference_lng};
   // Shorten the code using the reference location and check.
   if (test_data.test_type == "B" || test_data.test_type == "S") {
-    std::string actual_short = Shorten(test_data.full_code, reference_loc);
+    const std::string actual_short =
+        Shorten(test_data.full_code, reference_loc);
     EXPECT_EQ(test_data.short_code, actual_short);
   }
   // Now extend the code using the reference location and check.
   if (test_data.test_type == "B" || test_data.test_type == "R") {
-    std::string actual_full =
+    const std::string actual_full =
         RecoverNearest(test_data.short_code, reference_loc);
     EXPECT_EQ(test_data.full_code, actual_full);
   }
@@ -306,9 +306,9 @@ INSTANTIATE_TEST_SUITE_P(OLC_Tests, ShortCodeChecks,
                          ::testing::ValuesIn(GetShortCodeDataFromCsv()));
 
 TEST(MaxCodeLengthChecks, MaxCodeLength) {
-  LatLng loc = LatLng{51.3701125, -10.202665625};
+  constexpr LatLng loc{51.3701125, -10.202665625};
   // Check we do not return a code longer than is valid.
-  std::string long_code = Encode(loc, 1000000);
+  const std::string long_code = Encode(loc, 1000000);
   // The code length is the maximum digit count plus one for the separator.
   EXPECT_EQ(long_code.size(), 1 + internal::kMaximumDigitCount);
   EXPECT_TRUE(IsValid(long_code));
@@ -336,20 +336,19 @@ TEST(BenchmarkChecks, BenchmarkEncodeDecode) {
   std::uniform_int_distribution<size_t> len_dist(0, 15);
 
   std::vector<BenchmarkTestData> tests;
-  constexpr  size_t loops = 1000000;
+  constexpr size_t loops = 1000000;
   for (size_t i = 0; i < loops; i++) {
     BenchmarkTestData test_data = {};
     double lat = lat_dist(rng);
     double lng = lng_dist(rng);
-    const double rounding =
-        pow(10, round(rounding_dist(rng)));
+    const double rounding = pow(10, round(rounding_dist(rng)));
     lat = round(lat * rounding) / rounding;
     lng = round(lng * rounding) / rounding;
     auto len = len_dist(rng);
     if (len < 10 && len % 2 == 1) {
       len += 1;
     }
-    const auto lat_lng = LatLng{lat, lng};
+    const LatLng lat_lng{lat, lng};
     const std::string code = Encode(lat_lng, len);
     test_data.lat_lng = lat_lng;
     test_data.len = len;
