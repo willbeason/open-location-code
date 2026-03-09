@@ -1,7 +1,6 @@
 #include "openlocationcode.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
 
 #include <chrono>
 #include <cmath>
@@ -17,28 +16,26 @@ namespace internal {
 namespace {
 
 TEST(ParameterChecks, PairCodeLengthIsEven) {
-  EXPECT_EQ(0, (int)internal::kPairCodeLength % 2);
+  EXPECT_EQ(0, static_cast<int>(internal::kPairCodeLength) % 2);
 }
 
 TEST(ParameterChecks, AlphabetIsOrdered) {
   char last = 0;
-  for (size_t i = 0; i < internal::kEncodingBase; i++) {
+  for (size_t i = 0; i < kEncodingBase; i++) {
     EXPECT_TRUE(internal::kAlphabet[i] > last);
-    last = internal::kAlphabet[i];
+    last = kAlphabet[i];
   }
 }
 
 TEST(ParameterChecks, PositionLUTMatchesAlphabet) {
   // Loop over all elements of the lookup table.
-  for (size_t i = 0;
-       i < sizeof(internal::kPositionLUT) / sizeof(internal::kPositionLUT[0]);
-       ++i) {
-    const int pos = internal::kPositionLUT[i];
+  for (size_t i = 0; i < sizeof(kPositionLUT) / sizeof(kPositionLUT[0]); ++i) {
+    const int pos = kPositionLUT[i];
     const char c = 'C' + i;
     if (pos != -1) {
       // If the LUT entry indicates this character is in kAlphabet, verify it.
-      EXPECT_LT(pos, (int)internal::kEncodingBase);
-      EXPECT_EQ(c, (int)internal::kAlphabet[pos]);
+      EXPECT_LT(pos, static_cast<int>(internal::kEncodingBase));
+      EXPECT_EQ(c, static_cast<int>(internal::kAlphabet[pos]));
     } else {
       // Otherwise, verify this character is not in kAlphabet.
       EXPECT_EQ(std::strchr(internal::kAlphabet, c), nullptr);
@@ -63,7 +60,7 @@ std::vector<std::vector<std::string>> ParseCsv(
   std::ifstream input_stream(path_to_file, std::ifstream::binary);
   while (std::getline(input_stream, line)) {
     // Ignore blank lines and comments in the file
-    if (line.length() == 0 || line.at(0) == '#') {
+    if (line.empty() || line.at(0) == '#') {
       continue;
     }
     std::vector<std::string> line_records;
@@ -74,7 +71,7 @@ std::vector<std::vector<std::string>> ParseCsv(
     }
     csv_records.push_back(line_records);
   }
-  EXPECT_GT(csv_records.size(), (size_t)0);
+  EXPECT_GT(csv_records.size(), static_cast<size_t>(0));
   return csv_records;
 }
 
@@ -95,26 +92,26 @@ std::vector<DecodingTestData> GetDecodingDataFromCsv() {
   std::vector<DecodingTestData> data_results;
   std::vector<std::vector<std::string>> csv_records =
       ParseCsv(kDecodingTestsFile);
-  for (size_t i = 0; i < csv_records.size(); i++) {
+  for (auto& csv_record : csv_records) {
     DecodingTestData test_data = {};
-    test_data.code = csv_records[i][0];
-    test_data.length = atoi(csv_records[i][1].c_str());
-    test_data.lo_lat_deg = strtod(csv_records[i][2].c_str(), nullptr);
-    test_data.lo_lng_deg = strtod(csv_records[i][3].c_str(), nullptr);
-    test_data.hi_lat_deg = strtod(csv_records[i][4].c_str(), nullptr);
-    test_data.hi_lng_deg = strtod(csv_records[i][5].c_str(), nullptr);
+    test_data.code = csv_record[0];
+    test_data.length = atoi(csv_record[1].c_str());
+    test_data.lo_lat_deg = strtod(csv_record[2].c_str(), nullptr);
+    test_data.lo_lng_deg = strtod(csv_record[3].c_str(), nullptr);
+    test_data.hi_lat_deg = strtod(csv_record[4].c_str(), nullptr);
+    test_data.hi_lng_deg = strtod(csv_record[5].c_str(), nullptr);
     data_results.push_back(test_data);
   }
   return data_results;
 }
 
 TEST_P(DecodingChecks, Decode) {
-  DecodingTestData test_data = GetParam();
-  CodeArea expected_rect =
+  const DecodingTestData& test_data = GetParam();
+  const auto expected_rect =
       CodeArea(test_data.lo_lat_deg, test_data.lo_lng_deg, test_data.hi_lat_deg,
                test_data.hi_lng_deg, test_data.length);
   // Decode the code and check we get the correct coordinates.
-  CodeArea actual_rect = Decode(test_data.code);
+  const CodeArea actual_rect = Decode(test_data.code);
   EXPECT_EQ(expected_rect.GetCodeLength(), actual_rect.GetCodeLength());
   EXPECT_NEAR(expected_rect.GetCenter().latitude,
               actual_rect.GetCenter().latitude, 1e-10);
@@ -130,8 +127,8 @@ TEST_P(DecodingChecks, Decode) {
               1e-10);
 }
 
-INSTANTIATE_TEST_CASE_P(OLC_Tests, DecodingChecks,
-                        ::testing::ValuesIn(GetDecodingDataFromCsv()));
+INSTANTIATE_TEST_SUITE_P(OLC_Tests, DecodingChecks,
+                         ::testing::ValuesIn(GetDecodingDataFromCsv()));
 
 struct EncodingTestData {
   double lat_deg;
@@ -146,16 +143,16 @@ const std::string kEncodingTestsFile = "test_data/encoding.csv";
 
 std::vector<EncodingTestData> GetEncodingDataFromCsv() {
   std::vector<EncodingTestData> data_results;
-  std::vector<std::vector<std::string>> csv_records =
+  const std::vector<std::vector<std::string>> csv_records =
       ParseCsv(kEncodingTestsFile);
-  for (size_t i = 0; i < csv_records.size(); i++) {
+  for (auto& csv_record : csv_records) {
     EncodingTestData test_data = {};
-    test_data.lat_deg = strtod(csv_records[i][0].c_str(), nullptr);
-    test_data.lng_deg = strtod(csv_records[i][1].c_str(), nullptr);
-    test_data.lat_int = strtoll(csv_records[i][2].c_str(), nullptr, 10);
-    test_data.lng_int = strtoll(csv_records[i][3].c_str(), nullptr, 10);
-    test_data.length = atoi(csv_records[i][4].c_str());
-    test_data.code = csv_records[i][5];
+    test_data.lat_deg = strtod(csv_record[0].c_str(), nullptr);
+    test_data.lng_deg = strtod(csv_record[1].c_str(), nullptr);
+    test_data.lat_int = strtoll(csv_record[2].c_str(), nullptr, 10);
+    test_data.lng_int = strtoll(csv_record[3].c_str(), nullptr, 10);
+    test_data.length = atoi(csv_record[4].c_str());
+    test_data.code = csv_record[5];
     data_results.push_back(test_data);
   }
   return data_results;
@@ -168,24 +165,25 @@ struct TolerantTestParams {
 };
 
 class TolerantEncodingChecks
-    : public ::testing::TestWithParam<TolerantTestParams> {};
+    : public testing::TestWithParam<TolerantTestParams> {};
 
 TEST_P(TolerantEncodingChecks, EncodeDegrees) {
   const TolerantTestParams& test_params = GetParam();
   int failure_count = 0;
 
-  for (EncodingTestData tc : test_params.test_data) {
-    LatLng lat_lng = LatLng{tc.lat_deg, tc.lng_deg};
+  for (const EncodingTestData& tc : test_params.test_data) {
+    const auto lat_lng = LatLng{tc.lat_deg, tc.lng_deg};
     // Encode the test location and make sure we get the expected code.
     std::string got_code = Encode(lat_lng, tc.length);
-    if (tc.code.compare(got_code) != 0) {
+    if (tc.code != got_code) {
       failure_count++;
       printf("  ENCODING FAILURE: Got: '%s', expected: '%s'\n",
              got_code.c_str(), tc.code.c_str());
     }
   }
-  double actual_failure_rate =
-      double(failure_count) / test_params.test_data.size();
+  const double actual_failure_rate =
+      static_cast<double>(failure_count) /
+      static_cast<double>(test_params.test_data.size());
   EXPECT_LE(actual_failure_rate, test_params.allowed_failure_rate)
       << "Failure rate " << actual_failure_rate << " exceeds allowed rate "
       << test_params.allowed_failure_rate;
@@ -200,7 +198,7 @@ INSTANTIATE_TEST_SUITE_P(OLC_Tests, TolerantEncodingChecks,
 class EncodingChecks : public ::testing::TestWithParam<EncodingTestData> {};
 
 TEST_P(EncodingChecks, OLC_EncodeIntegers) {
-  EncodingTestData test_data = GetParam();
+  const EncodingTestData& test_data = GetParam();
   // Encode the test location and make sure we get the expected code.
   std::string got_code = internal::encodeIntegers(
       test_data.lat_int, test_data.lng_int, test_data.length);
@@ -208,19 +206,19 @@ TEST_P(EncodingChecks, OLC_EncodeIntegers) {
 }
 
 TEST_P(EncodingChecks, OLC_LocationToIntegers) {
-  EncodingTestData test_data = GetParam();
-  int64_t got_lat = internal::latitudeToInteger(test_data.lat_deg);
+  const EncodingTestData& test_data = GetParam();
+  const int64_t got_lat = internal::latitudeToInteger(test_data.lat_deg);
   // Due to floating point precision limitations, we may get values 1 less than
   // expected.
   EXPECT_LE(got_lat, test_data.lat_int);
   EXPECT_GE(got_lat + 1, test_data.lat_int);
-  int64_t got_lng = internal::longitudeToInteger(test_data.lng_deg);
+  const int64_t got_lng = internal::longitudeToInteger(test_data.lng_deg);
   EXPECT_LE(got_lng, test_data.lng_int);
   EXPECT_GE(got_lng + 1, test_data.lng_int);
 }
 
-INSTANTIATE_TEST_CASE_P(OLC_Tests, EncodingChecks,
-                        ::testing::ValuesIn(GetEncodingDataFromCsv()));
+INSTANTIATE_TEST_SUITE_P(OLC_Tests, EncodingChecks,
+                         ::testing::ValuesIn(GetEncodingDataFromCsv()));
 
 struct ValidityTestData {
   std::string code;
@@ -237,26 +235,26 @@ std::vector<ValidityTestData> GetValidityDataFromCsv() {
   std::vector<ValidityTestData> data_results;
   std::vector<std::vector<std::string>> csv_records =
       ParseCsv(kValidityTestsFile);
-  for (size_t i = 0; i < csv_records.size(); i++) {
+  for (auto& csv_record : csv_records) {
     ValidityTestData test_data = {};
-    test_data.code = csv_records[i][0];
-    test_data.is_valid = csv_records[i][1] == "true";
-    test_data.is_short = csv_records[i][2] == "true";
-    test_data.is_full = csv_records[i][3] == "true";
+    test_data.code = csv_record[0];
+    test_data.is_valid = csv_record[1] == "true";
+    test_data.is_short = csv_record[2] == "true";
+    test_data.is_full = csv_record[3] == "true";
     data_results.push_back(test_data);
   }
   return data_results;
 }
 
 TEST_P(ValidityChecks, Validity) {
-  ValidityTestData test_data = GetParam();
+  const ValidityTestData& test_data = GetParam();
   EXPECT_EQ(test_data.is_valid, IsValid(test_data.code));
   EXPECT_EQ(test_data.is_full, IsFull(test_data.code));
   EXPECT_EQ(test_data.is_short, IsShort(test_data.code));
 }
 
-INSTANTIATE_TEST_CASE_P(OLC_Tests, ValidityChecks,
-                        ::testing::ValuesIn(GetValidityDataFromCsv()));
+INSTANTIATE_TEST_SUITE_P(OLC_Tests, ValidityChecks,
+                         ::testing::ValuesIn(GetValidityDataFromCsv()));
 
 struct ShortCodeTestData {
   std::string full_code;
@@ -274,13 +272,13 @@ std::vector<ShortCodeTestData> GetShortCodeDataFromCsv() {
   std::vector<ShortCodeTestData> data_results;
   std::vector<std::vector<std::string>> csv_records =
       ParseCsv(kShortCodeTestsFile);
-  for (size_t i = 0; i < csv_records.size(); i++) {
+  for (auto& csv_record : csv_records) {
     ShortCodeTestData test_data = {};
-    test_data.full_code = csv_records[i][0];
-    test_data.reference_lat = strtod(csv_records[i][1].c_str(), nullptr);
-    test_data.reference_lng = strtod(csv_records[i][2].c_str(), nullptr);
-    test_data.short_code = csv_records[i][3];
-    test_data.test_type = csv_records[i][4];
+    test_data.full_code = csv_record[0];
+    test_data.reference_lat = strtod(csv_record[1].c_str(), nullptr);
+    test_data.reference_lng = strtod(csv_record[2].c_str(), nullptr);
+    test_data.short_code = csv_record[3];
+    test_data.test_type = csv_record[4];
     data_results.push_back(test_data);
   }
   return data_results;
@@ -303,8 +301,8 @@ TEST_P(ShortCodeChecks, ShortCode) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(OLC_Tests, ShortCodeChecks,
-                        ::testing::ValuesIn(GetShortCodeDataFromCsv()));
+INSTANTIATE_TEST_SUITE_P(OLC_Tests, ShortCodeChecks,
+                         ::testing::ValuesIn(GetShortCodeDataFromCsv()));
 
 TEST(MaxCodeLengthChecks, MaxCodeLength) {
   LatLng loc = LatLng{51.3701125, -10.202665625};
@@ -334,42 +332,43 @@ TEST(BenchmarkChecks, BenchmarkEncodeDecode) {
   const size_t loops = 1000000;
   for (size_t i = 0; i < loops; i++) {
     BenchmarkTestData test_data = {};
-    double lat = (double)rand() / RAND_MAX * 180 - 90;
-    double lng = (double)rand() / RAND_MAX * 360 - 180;
-    size_t rounding = pow(10, round((double)rand() / RAND_MAX * 10));
+    double lat = static_cast<double>(rand()) / RAND_MAX * 180 - 90;
+    double lng = static_cast<double>(rand()) / RAND_MAX * 360 - 180;
+    size_t rounding =
+        pow(10, round(static_cast<double>(rand()) / RAND_MAX * 10));
     lat = round(lat * rounding) / rounding;
     lng = round(lng * rounding) / rounding;
-    size_t len = round((double)rand() / RAND_MAX * 15);
+    size_t len = round(static_cast<double>(rand()) / RAND_MAX * 15);
     if (len < 10 && len % 2 == 1) {
       len += 1;
     }
-    LatLng lat_lng = LatLng{lat, lng};
-    std::string code = Encode(lat_lng, len);
+    const auto lat_lng = LatLng{lat, lng};
+    const std::string code = Encode(lat_lng, len);
     test_data.lat_lng = lat_lng;
     test_data.len = len;
     test_data.code = code;
     tests.push_back(test_data);
   }
   auto start = std::chrono::high_resolution_clock::now();
-  for (auto td : tests) {
+  for (const auto& td : tests) {
     Encode(td.lat_lng, td.len);
   }
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
                       std::chrono::high_resolution_clock::now() - start)
                       .count();
   std::cout << "Encoding " << loops << " locations took " << duration
-            << " usecs total, " << (float)duration / loops
+            << " usecs total, " << static_cast<float>(duration) / loops
             << " usecs per call\n";
 
   start = std::chrono::high_resolution_clock::now();
-  for (auto td : tests) {
+  for (const auto& td : tests) {
     Decode(td.code);
   }
   duration = std::chrono::duration_cast<std::chrono::microseconds>(
                  std::chrono::high_resolution_clock::now() - start)
                  .count();
   std::cout << "Decoding " << loops << " locations took " << duration
-            << " usecs total, " << (float)duration / loops
+            << " usecs total, " << static_cast<float>(duration) / loops
             << " usecs per call\n";
 }
 
