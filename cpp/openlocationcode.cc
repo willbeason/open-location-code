@@ -101,7 +101,7 @@ std::string encodeIntegers(int64_t lat_val, int64_t lng_val,
   lng_val /= kEncodingBase;
 
   // Compute the pair section before the separator in reverse order.
-  // Even indices contain latitude and odd contain longitude.
+  // Even indices contain latitude and odd indices contain longitude.
   for (int i = (kPairCodeLength / 2 + 1); i >= 0; i -= 2) {
     code[i] = kAlphabet[lat_val % kEncodingBase];
     code[i + 1] = kAlphabet[lng_val % kEncodingBase];
@@ -126,7 +126,8 @@ namespace {
 double pow_neg(const double base, const double exponent) {
   if (exponent == 0) {
     return 1;
-  } else if (exponent > 0) {
+  }
+  if (exponent > 0) {
     return pow(base, exponent);
   }
   return 1 / pow(base, -exponent);
@@ -164,7 +165,7 @@ double normalize_longitude(double longitude_degrees) {
 
 // Adjusts 90 degree latitude to be lower so that a legal OLC code can be
 // generated.
-double adjust_latitude(double latitude_degrees, size_t code_length) {
+double adjust_latitude(double latitude_degrees, const size_t code_length) {
   latitude_degrees = std::min(90.0, std::max(-90.0, latitude_degrees));
 
   if (latitude_degrees < internal::kLatitudeMaxDegrees) {
@@ -172,7 +173,7 @@ double adjust_latitude(double latitude_degrees, size_t code_length) {
   }
   // Subtract half the code precision to get the latitude into the code
   // area.
-  double precision = compute_precision_for_length(code_length);
+  const double precision = compute_precision_for_length(static_cast<int>(code_length));
   return latitude_degrees - precision / 2;
 }
 
@@ -240,8 +241,8 @@ CodeArea Decode(const std::string &code) {
   // Process any extra precision digits.
   if (clean_code.size() > internal::kPairCodeLength) {
     // Initialise the place values for the grid.
-    int row_pv = pow(internal::kGridRows, internal::kGridCodeLength - 1);
-    int col_pv = pow(internal::kGridColumns, internal::kGridCodeLength - 1);
+    int row_pv = static_cast<int>(pow(internal::kGridRows, internal::kGridCodeLength - 1));
+    int col_pv = static_cast<int>(pow(internal::kGridColumns, internal::kGridCodeLength - 1));
     // How many digits do we have to process?
     digits = std::min(internal::kMaximumDigitCount, clean_code.size());
     for (size_t i = internal::kPairCodeLength; i < digits; i++) {
